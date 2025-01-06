@@ -1,0 +1,72 @@
+networks:
+  kafka-network: # 사용자 정의 네트워크 추가
+
+services:
+  controller-1:
+    build: ./kafka-controller
+    container_name: controller-1
+    networks:
+      - kafka-network # 네트워크에 연결
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_LISTENERS: CONTROLLER://0.0.0.0:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      #KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093, 2@controller-2:9093, 3@controller-3:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@172.31.5.40:9094, 2@172.31.5.40:9095, 3@172.31.5.40:9096
+    ports:
+      - 9094:9093
+        #    volumes:
+        #      - ../volume/metadata/controller-1:/tmp/kraft-controller-logs
+  
+  controller-2:
+    build: ./kafka-controller-s
+    container_name: controller-2
+    networks:
+      - kafka-network # 네트워크에 연결
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_LISTENERS: CONTROLLER://0.0.0.0:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        #KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093, 2@controller-2:9093, 3@controller-3:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@172.31.5.40:9094, 2@172.31.5.40:9095, 3@172.31.5.40:9096 
+    depends_on:
+      - controller-1
+    ports:
+      - 9095:9093
+        #    volumes:
+        #      - ../volume/data:/opt/kafka/data/ #클러스터 저장
+        #      - ../volume/metadata/controller-2:/tmp/kraft-controller-logs
+  controller-3:
+    build: ./kafka-controller-s
+    container_name: controller-3
+    networks:
+      - kafka-network # 네트워크에 연결
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: controller
+      KAFKA_LISTENERS: CONTROLLER://0.0.0.0:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        #KAFKA_CONTROLLER_QUORUM_VOTERS: 1@controller-1:9093, 2@controller-2:9093, 3@controller-3:9093
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@172.31.5.40:9094, 2@172.31.5.40:9095, 3@172.31.5.40:9096
+    depends_on:
+      - controller-1
+    ports:
+      - 9096:9093
+        #volumes:
+      #      - ../volume/data:/opt/kafka/data/
+      #      - ../volume/metadata/controller-3:/tmp/kraft-controller-logs
+
+  kafka-connector:
+    build: ./kafka-connector
+    container_name: connector
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./kafka-connector/plugins:/opt/kafka/plugins
+    networks:
+      - kafka-network # 네트워크에 연결  
+
+volumes:
+  shared_volume:
